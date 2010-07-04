@@ -1,0 +1,158 @@
+diff -u pimd.orig/Makefile pimd/Makefile
+--- pimd.orig/Makefile	Fri Jul  2 11:19:10 2010
++++ pimd/Makefile	Fri Jul  2 10:52:18 2010
+@@ -56,7 +56,7 @@
+ MCAST_INCLUDE  = -Iinclude
+ PURIFY         = purify -cache-dir=/tmp -collector=/import/pkgs/gcc/lib/gcc-lib/sparc-sun-sunos4.1.3_U1/2.7.2.2/ld
+ MISCDEFS       = -D__BSD_SOURCE -D_GNU_SOURCE -DPIM
+-MISCDEFS      += -W -Wall -Werror -Wextra
++MISCDEFS      += -W -Wall -Werror
+ COMMON_CFLAGS  = $(MCAST_INCLUDE) $(SNMPDEF) $(RSRRDEF) $(MISCDEFS)
+ CFLAGS         = $(INCLUDES) $(DEFS) $(COMMON_CFLAGS) $(USERCOMPILE)
+ 
+diff -u pimd.orig/config.c pimd/config.c
+--- pimd.orig/config.c	Fri Jul  2 11:19:10 2010
++++ pimd/config.c	Fri Jul  2 12:06:35 2010
+@@ -65,7 +65,7 @@
+     struct ifreq *ifrp, *ifend;
+     register struct uvif *v;
+     register vifi_t vifi;
+-    int n;
++    u_int32 n;
+     u_int32 addr, mask, subnet;
+     short flags;
+     int num_ifreq = 64;
+--- pimd.orig/config.mk	Fri Jul  2 11:19:10 2010
++++ pimd/config.mk	Fri Jul  2 09:22:39 2010
+@@ -48,8 +48,8 @@
+ #DEFS           = -Wall -g
+ 
+ ## OpenBSD	-DOpenBSD is defined by the OS
+-#INCLUDES       = -Iinclude/openbsd
+-#DEFS           = -Wall -g
++INCLUDES       = -Iinclude/openbsd
++DEFS           = -Wall -g
+ 
+ ## BSDI		-D__bsdi__ is defined by the OS
+ #INCLUDES       =
+@@ -80,7 +80,7 @@
+ #LIB2           = -L/usr/ucblib -lucb -L/usr/lib -lsocket -lnsl
+ 
+ ## Linux v2.2, or later
+-INCLUDES       = -Iinclude/linux
+-DEFS           = -W -Wall -g -D__BSD_SOURCE -DLinux \
+-		 -DRAW_INPUT_IS_RAW -DRAW_OUTPUT_IS_RAW \
+-		 -DIOCTL_OK_ON_RAW_SOCKET \
++#INCLUDES       = -Iinclude/linux
++#DEFS           = -W -Wall -g -D__BSD_SOURCE -DLinux \
++#		 -DRAW_INPUT_IS_RAW -DRAW_OUTPUT_IS_RAW \
++#		 -DIOCTL_OK_ON_RAW_SOCKET \
+Common subdirectories: pimd.orig/debian and pimd/debian
+diff -u pimd.orig/debug.c pimd/debug.c
+--- pimd.orig/debug.c	Fri Jul  2 11:19:10 2010
++++ pimd/debug.c	Fri Jul  2 09:58:37 2010
+@@ -354,7 +354,7 @@
+     char *msg;
+     struct timeval now;
+     struct tm *thyme;
+-
++    time_t lt;
+     va_start(ap, format);
+     vsnprintf(&fmt[10], sizeof(fmt) - 10, format, ap);
+     va_end(ap);
+@@ -366,7 +366,8 @@
+      */
+     if (haveterminal && (debug || severity <= LOG_WARNING)) {
+         gettimeofday(&now, NULL);
+-        thyme = localtime(&now.tv_sec);
++        lt = now.tv_sec;
++	thyme = localtime(&lt);
+         if (!debug)
+             fprintf(stderr, "%s: ", __progname);
+         fprintf(stderr, "%02d:%02d:%02d.%03ld %s", thyme->tm_hour,
+diff -u pimd.orig/defs.h pimd/defs.h
+--- pimd.orig/defs.h	Fri Jul  2 11:19:10 2010
++++ pimd/defs.h	Fri Jul  2 10:15:33 2010
+@@ -72,7 +72,7 @@
+ #endif /* SYSV || bsdi || SunOS 4.x */
+ #include <time.h>
+ #include <sys/time.h>
+-#include <linux/if.h>
++#include <net/if.h>
+ #include <netinet/in.h>
+ #include <netinet/in_systm.h>
+ #include <netinet/ip.h>
+diff -u pimd.orig/routesock.c pimd/routesock.c
+--- pimd.orig/routesock.c	Fri Jul  2 11:19:10 2010
++++ pimd/routesock.c	Fri Jul  2 11:58:39 2010
+@@ -70,9 +70,9 @@
+ /*
+  * Local functions definitions.
+  */
+-static int getmsg (struct rt_msghdr *, int, struct rpfctl *rpfinfo));
++static int getmsg (struct rt_msghdr *, int, struct rpfctl *rpfinfo);
+ 
+-/*
++ /*
+  * TODO: check again!
+  */
+ #ifdef IRIX
+@@ -178,7 +178,7 @@
+     if (inet_lnaof(su->sin.sin_addr) == INADDR_ANY) {
+ 	IF_DEBUG(DEBUG_RPF)
+ 	    logit(LOG_DEBUG, 0, "k_req_incoming: Invalid source %s",
+-		inet_fmt(source,s1));
++		inet_fmt(source, s1, sizeof(s1)));
+ 	return(FALSE); 
+     }
+     so_ifp.sa.sa_family = AF_LINK;
+@@ -251,13 +251,13 @@
+     struct in_addr in;
+     vifi_t vifi;
+     struct uvif *v;
+-    
++    (void)msglen; /* to get ride of routesock.c:243: warning: unused parameter `msglen' */ 
+     if (rpfinfop == (struct rpfctl *)NULL)
+ 	return(FALSE);
+     
+     in = ((struct sockaddr_in *)&so_dst)->sin_addr;
+     IF_DEBUG(DEBUG_RPF)
+-	logit(LOG_DEBUG, 0, "route to: %s", inet_fmt(in.s_addr, s1));
++	logit(LOG_DEBUG, 0, "route to: %s", inet_fmt(in.s_addr, s1, sizeof(s1)));
+     cp = ((char *)(rtm + 1));
+     if (rtm->rtm_addrs)
+ 	for (i = 1; i; i <<= 1)
+@@ -286,7 +286,7 @@
+ 	IF_DEBUG(DEBUG_RPF)
+ 	    logit(LOG_DEBUG, 0,
+ 		"No incoming interface for destination %s",
+-		inet_fmt(in.s_addr, s1));
++		inet_fmt(in.s_addr, s1, sizeof(s1)));
+ 	return(FALSE);
+     }
+     if (dst && mask)
+@@ -295,13 +295,13 @@
+ 	in = ((struct sockaddr_in *)dst)->sin_addr;
+ 	IF_DEBUG(DEBUG_RPF)
+ 	    logit(LOG_DEBUG, 0, " destination is: %s",
+-		inet_fmt(in.s_addr, s1));
++		inet_fmt(in.s_addr, s1, sizeof(s1)));
+     }
+     if (gate && rtm->rtm_flags & RTF_GATEWAY) {
+ 	in = ((struct sockaddr_in *)gate)->sin_addr;
+ 	IF_DEBUG(DEBUG_RPF)
+ 	    logit(LOG_DEBUG, 0, " gateway is: %s",
+-		inet_fmt(in.s_addr, s1));
++		inet_fmt(in.s_addr, s1, sizeof(s1)));
+ 	rpfinfop->rpfneighbor = in;
+     }
+    
+@@ -318,7 +318,7 @@
+     
+     if (vifi >= numvifs){
+ 	IF_DEBUG(DEBUG_RPF)
+-	    logit(LOG_DEBUG, 0, "Invalid incoming interface for destination %s, because of invalid virtual interface", inet_fmt(in.s_addr, s1));
++	    logit(LOG_DEBUG, 0, "Invalid incoming interface for destination %s, because of invalid virtual interface", inet_fmt(in.s_addr, s1, sizeof(s1)));
+ 	return(FALSE);/* invalid iif */
+     }
+     
