@@ -70,9 +70,9 @@ u_long rtm_inits;
 /*
  * Local functions definitions.
  */
-static int getmsg (struct rt_msghdr *, int, struct rpfctl *rpfinfo);
+static int getmsg (struct rt_msghdr *, int, struct rpfctl *rpfinfo));
 
- /*
+/*
  * TODO: check again!
  */
 #ifdef IRIX
@@ -178,7 +178,7 @@ k_req_incoming(source, rpfp)
     if (inet_lnaof(su->sin.sin_addr) == INADDR_ANY) {
 	IF_DEBUG(DEBUG_RPF)
 	    logit(LOG_DEBUG, 0, "k_req_incoming: Invalid source %s",
-		inet_fmt(source, s1, sizeof(s1)));
+		inet_fmt(source,s1));
 	return(FALSE); 
     }
     so_ifp.sa.sa_family = AF_LINK;
@@ -251,13 +251,13 @@ getmsg(rtm, msglen, rpfinfop)
     struct in_addr in;
     vifi_t vifi;
     struct uvif *v;
-    (void)msglen; /* to get ride of routesock.c:243: warning: unused parameter `msglen' */ 
+    
     if (rpfinfop == (struct rpfctl *)NULL)
 	return(FALSE);
     
     in = ((struct sockaddr_in *)&so_dst)->sin_addr;
     IF_DEBUG(DEBUG_RPF)
-	logit(LOG_DEBUG, 0, "route to: %s", inet_fmt(in.s_addr, s1, sizeof(s1)));
+	logit(LOG_DEBUG, 0, "route to: %s", inet_fmt(in.s_addr, s1));
     cp = ((char *)(rtm + 1));
     if (rtm->rtm_addrs)
 	for (i = 1; i; i <<= 1)
@@ -286,7 +286,7 @@ getmsg(rtm, msglen, rpfinfop)
 	IF_DEBUG(DEBUG_RPF)
 	    logit(LOG_DEBUG, 0,
 		"No incoming interface for destination %s",
-		inet_fmt(in.s_addr, s1, sizeof(s1)));
+		inet_fmt(in.s_addr, s1));
 	return(FALSE);
     }
     if (dst && mask)
@@ -295,13 +295,13 @@ getmsg(rtm, msglen, rpfinfop)
 	in = ((struct sockaddr_in *)dst)->sin_addr;
 	IF_DEBUG(DEBUG_RPF)
 	    logit(LOG_DEBUG, 0, " destination is: %s",
-		inet_fmt(in.s_addr, s1, sizeof(s1)));
+		inet_fmt(in.s_addr, s1));
     }
     if (gate && rtm->rtm_flags & RTF_GATEWAY) {
 	in = ((struct sockaddr_in *)gate)->sin_addr;
 	IF_DEBUG(DEBUG_RPF)
 	    logit(LOG_DEBUG, 0, " gateway is: %s",
-		inet_fmt(in.s_addr, s1, sizeof(s1)));
+		inet_fmt(in.s_addr, s1));
 	rpfinfop->rpfneighbor = in;
     }
     
@@ -318,7 +318,7 @@ getmsg(rtm, msglen, rpfinfop)
     
     if (vifi >= numvifs){
 	IF_DEBUG(DEBUG_RPF)
-	    logit(LOG_DEBUG, 0, "Invalid incoming interface for destination %s, because of invalid virtual interface", inet_fmt(in.s_addr, s1, sizeof(s1)));
+	    logit(LOG_DEBUG, 0, "Invalid incoming interface for destination %s, because of invalid virtual interface", inet_fmt(in.s_addr, s1));
 	return(FALSE);/* invalid iif */
     }
     

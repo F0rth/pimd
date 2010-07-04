@@ -65,7 +65,7 @@ config_vifs_from_kernel()
     struct ifreq *ifrp, *ifend;
     register struct uvif *v;
     register vifi_t vifi;
-    u_int32 n;
+    int n;
     u_int32 addr, mask, subnet;
     short flags;
     int num_ifreq = 64;

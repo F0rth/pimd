@@ -48,8 +48,8 @@ MISCDEFS       =
 #DEFS           = -Wall -g
 
 ## OpenBSD	-DOpenBSD is defined by the OS
-INCLUDES       = -Iinclude/openbsd
-DEFS           = -Wall -g
+#INCLUDES       = -Iinclude/openbsd
+#DEFS           = -Wall -g
 
 ## BSDI		-D__bsdi__ is defined by the OS
 #INCLUDES       =
@@ -80,7 +80,7 @@ DEFS           = -Wall -g
 #LIB2           = -L/usr/ucblib -lucb -L/usr/lib -lsocket -lnsl
 
 ## Linux v2.2, or later
-#INCLUDES       = -Iinclude/linux
-#DEFS           = -W -Wall -g -D__BSD_SOURCE -DLinux \
-#		 -DRAW_INPUT_IS_RAW -DRAW_OUTPUT_IS_RAW \
-#		 -DIOCTL_OK_ON_RAW_SOCKET \
+INCLUDES       = -Iinclude/linux
+DEFS           = -W -Wall -g -D__BSD_SOURCE -DLinux \
+		 -DRAW_INPUT_IS_RAW -DRAW_OUTPUT_IS_RAW \
+		 -DIOCTL_OK_ON_RAW_SOCKET \
